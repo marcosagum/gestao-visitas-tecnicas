@@ -60,42 +60,109 @@ export default function VTDashboard() {
   useEffect(() => {
     try {
       const savedVTs = localStorage.getItem('vts_list');
+      
+      // VTs de exemplo (hoje, próximos dias, concluídas e salas variadas)
+      const mockVTs: VT[] = [
+        {
+          id: "vt-1",
+          event: "Kid Abelha - Reunião de Alinhamento Arena",
+          date: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString().slice(0, 16),
+          responsible: "Marcos Agum",
+          companion: "Roberto (Produtor Kid Abelha)",
+          rooms: ["Palco Principal", "Camarins A/B", "Sala de Controle / FOH"],
+          clientRequests: "Necessidade de 12 canais de retorno sem fio IEM (In-Ear Monitor). O rider técnico exige camarim com ar condicionado forte.",
+          specialNotes: "Medir largura da rampa de acesso lateral ao palco para cases grandes de som.",
+          status: "pending",
+          notified: false
+        },
+        {
+          id: "vt-2",
+          event: "Festival de Dança - Ensaio Geral",
+          date: new Date().toISOString().slice(0, 16), // Hoje!
+          responsible: "Ana Carolina",
+          companion: "Clara Ramos (Diretora do Festival)",
+          rooms: ["Palco Principal", "Camarins A/B"],
+          clientRequests: "Necessidade de iluminação especial cênica de LED e piso de linóleo sobre o palco.",
+          specialNotes: "Verificar se a temperatura do ar condicionado da plateia pode ser mantida em 22°C.",
+          status: "pending",
+          notified: false
+        },
+        {
+          id: "vt-3",
+          event: "Show Lançamento Sertanejo - Montagem",
+          date: new Date(Date.now() + 1 * 24 * 60 * 60 * 1000).toISOString().slice(0, 16), // Amanhã!
+          responsible: "Thiago Silva",
+          companion: "Gustavo Lima (Diretoria Artística)",
+          rooms: ["Palco Principal", "Estacionamento / Carga", "Camarotes VIP"],
+          clientRequests: "Instalação de sonorização complementar nos camarotes VIP e rampa especial de acesso de cargas.",
+          specialNotes: "Exige gerador de energia trifásico de 250kVA reserva para painel de LED principal.",
+          status: "pending",
+          notified: false
+        },
+        {
+          id: "vt-4",
+          event: "Convenção Inova 2026 - Alinhamento TI",
+          date: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString().slice(0, 16),
+          responsible: "Felipe Castro",
+          companion: "Mariana Costa (Produtora Inova)",
+          rooms: ["Área de Credenciamento", "Praça de Alimentação", "Acessos / Bilheteria"],
+          clientRequests: "Necessidade de link dedicado de internet de 500Mbps na área de credenciamento e totens de autoatendimento.",
+          specialNotes: "Check de roteadores Wi-Fi corporativos redundantes cobrindo a praça de alimentação inteira.",
+          status: "pending",
+          notified: false
+        },
+        {
+          id: "vt-5",
+          event: "Congresso de Medicina - Expositores",
+          date: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString().slice(0, 16),
+          responsible: "Dr. Leonardo",
+          companion: "Patricia Albuquerque (CRM Eventos)",
+          rooms: ["Estacionamento / Carga", "Praça de Alimentação", "Acessos / Bilheteria"],
+          clientRequests: "Pontos de energia monofásicos em cada stand (total de 45 stands) na praça de alimentação.",
+          specialNotes: "Auditoria de segurança das instalações temporárias de gás na praça de alimentação.",
+          status: "pending",
+          notified: false
+        },
+        {
+          id: "vt-6",
+          event: "Futebol Beneficente - Cobertura TI",
+          date: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString().slice(0, 16), // Ontem!
+          responsible: "Lucas Pereira",
+          companion: "Eduardo (Diretor de TI)",
+          rooms: ["Camarotes VIP", "Acessos / Bilheteria"],
+          clientRequests: "Configuração de rede interna para transmissão de streaming ao vivo de alta velocidade.",
+          specialNotes: "Cabeamento de fibra ótica temporário passando pelos camarotes VIP.",
+          status: "completed",
+          notified: true
+        }
+      ];
+
+      // Se não houver dados, ou se houver apenas o mock anterior de tamanho 1, carrega os novos mocks ricos
       if (savedVTs) {
         const parsed = JSON.parse(savedVTs);
-        // Normalização defensiva de dados legados
-        const normalized = parsed.map((vt: any) => ({
-          id: vt.id || `vt-${Date.now()}-${Math.random()}`,
-          event: vt.event || "Evento Sem Nome",
-          date: vt.date || new Date().toISOString().slice(0, 16),
-          responsible: vt.responsible || "Não Definido",
-          companion: vt.companion || "Não Definido",
-          rooms: Array.isArray(vt.rooms) ? vt.rooms : ["Palco Principal"],
-          clientRequests: vt.clientRequests || "",
-          specialNotes: vt.specialNotes || "",
-          status: vt.status || "pending",
-          notified: typeof vt.notified === "boolean" ? vt.notified : false,
-        }));
-        setVts(normalized);
+        if (parsed.length <= 1) {
+          setVts(mockVTs);
+          localStorage.setItem('vts_list', JSON.stringify(mockVTs));
+        } else {
+          // Normalização defensiva de dados legados
+          const normalized = parsed.map((vt: any) => ({
+            id: vt.id || `vt-${Date.now()}-${Math.random()}`,
+            event: vt.event || "Evento Sem Nome",
+            date: vt.date || new Date().toISOString().slice(0, 16),
+            responsible: vt.responsible || "Não Definido",
+            companion: vt.companion || "Não Definido",
+            rooms: Array.isArray(vt.rooms) ? vt.rooms : ["Palco Principal"],
+            clientRequests: vt.clientRequests || "",
+            specialNotes: vt.specialNotes || "",
+            status: vt.status || "pending",
+            notified: typeof vt.notified === "boolean" ? vt.notified : false,
+          }));
+          setVts(normalized);
+        }
       } else {
-        // Mock inicial caso esteja vazio
-        const initialMock: VT[] = [
-          {
-            id: "vt-1",
-            event: "Kid Abelha - Reunião de Alinhamento Arena",
-            date: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString().slice(0, 16),
-            responsible: "Marcos Agum",
-            companion: "Roberto (Produtor Kid Abelha)",
-            rooms: ["Palco Principal", "Camarins A/B", "Sala de Controle / FOH"],
-            clientRequests: "Necessidade de 12 canais de retorno sem fio IEM (In-Ear Monitor). O rider técnico exige camarim com ar condicionado forte.",
-            specialNotes: "Medir largura da rampa de acesso lateral ao palco para cases grandes de som.",
-            status: "pending",
-            notified: false
-          }
-        ];
-        setVts(initialMock);
-        localStorage.setItem('vts_list', JSON.stringify(initialMock));
+        setVts(mockVTs);
+        localStorage.setItem('vts_list', JSON.stringify(mockVTs));
       }
-      
       const savedRooms = localStorage.getItem('vt_available_rooms');
       if (savedRooms) setAvailableRooms(JSON.parse(savedRooms));
 
