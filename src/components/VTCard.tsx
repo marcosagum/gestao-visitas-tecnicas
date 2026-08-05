@@ -24,33 +24,6 @@ interface VTCardProps {
 export const VTCard: React.FC<VTCardProps> = ({ vt, onComplete, onEdit, onDelete }) => {
   const [activeTab, setActiveTab] = useState<'requests' | 'notes'>('requests');
 
-  // Lógica heurística local para sugerir soluções automaticamente com valor padrão
-  const getTechnicalSolutions = (request: string = '') => {
-    const text = request.toLowerCase();
-    const solutions: string[] = [];
-
-    if (text.includes("som") || text.includes("áudio") || text.includes("audio") || text.includes("microfone")) {
-      solutions.push("PA Line Array L-Acoustics K2", "Console Digital Yamaha Rivage PM7", "Sistema Shure Axient Digital");
-    }
-    if (text.includes("retorno") || text.includes("in-ear") || text.includes("iem")) {
-      solutions.push("Monitores In-Ear Sennheiser G4 IEM", "Side-fills d&b audiotechnik");
-    }
-    if (text.includes("led") || text.includes("painel") || text.includes("vídeo") || text.includes("video")) {
-      solutions.push("Painel de LED Absen P2.8 Premium", "Processador Barco E2");
-    }
-    if (text.includes("luz") || text.includes("ilumina") || text.includes("refletor")) {
-      solutions.push("Moving Heads Robe Pointe", "Mesa MA Lighting GrandMA3");
-    }
-    if (text.includes("energia") || text.includes("gerador") || text.includes("trifásico")) {
-      solutions.push("Grupo Gerador Silenciado 250kVA", "QTA Trifásico 125A");
-    }
-    
-    if (solutions.length === 0) {
-      solutions.push("PA JBL VRX Line Array médio", "Console Digital Standard (Behringer X32)");
-    }
-    return solutions;
-  };
-
   return (
     <div className="bg-[#121620] border border-[#1d2433] rounded-xl p-6 flex flex-col gap-5 transition-all duration-300 hover:-translate-y-1 hover:border-[#2e3952] hover:shadow-[0_10px_25px_rgba(0,0,0,0.3)] text-left">
       <div className="flex justify-between items-start gap-2">
@@ -92,12 +65,13 @@ export const VTCard: React.FC<VTCardProps> = ({ vt, onComplete, onEdit, onDelete
         </div>
       </div>
 
-      <div className="border-t border-[#1d2433] pt-3 flex flex-col gap-2">
-        <div className="flex gap-4 border-b border-[#1d2433] pb-1">
+      {/* Caixa interna arredondada para abas de Pedidos e Considerações */}
+      <div className="bg-[#090b11] border border-[#1d2433] rounded-xl p-4 flex flex-col gap-3 mt-auto">
+        <div className="flex gap-4 border-b border-[#1d2433]/60 pb-2">
           <button
             type="button"
             onClick={() => setActiveTab('requests')}
-            className={`text-[10px] font-bold uppercase pb-1.5 border-b-2 transition-all ${
+            className={`text-[10px] font-bold uppercase pb-1 border-b-2 transition-all cursor-pointer ${
               activeTab === 'requests' ? 'border-[#ff1a3c] text-white' : 'border-transparent text-[#6b7280]'
             }`}
           >
@@ -106,28 +80,16 @@ export const VTCard: React.FC<VTCardProps> = ({ vt, onComplete, onEdit, onDelete
           <button
             type="button"
             onClick={() => setActiveTab('notes')}
-            className={`text-[10px] font-bold uppercase pb-1.5 border-b-2 transition-all ${
+            className={`text-[10px] font-bold uppercase pb-1 border-b-2 transition-all cursor-pointer ${
               activeTab === 'notes' ? 'border-[#ff1a3c] text-white' : 'border-transparent text-[#6b7280]'
             }`}
           >
             Considerações Especiais
           </button>
         </div>
-        <div className="text-xs text-[#9ca3af] min-h-[50px] leading-relaxed">
-          {activeTab === 'requests' ? (vt.clientRequests || 'Nenhum pedido registrado') : (vt.specialNotes || 'Nenhuma consideração registrada')}
+        <div className="text-xs text-[#9ca3af] min-h-[50px] leading-relaxed whitespace-pre-line">
+          {activeTab === 'requests' ? (vt.clientRequests || 'Nenhum pedido registrado.') : (vt.specialNotes || 'Nenhuma consideração registrada.')}
         </div>
-      </div>
-
-      <div className="bg-[#00e5ff]/5 border border-dashed border-[#00e5ff]/20 rounded-lg p-3 mt-auto text-xs flex flex-col gap-1.5">
-        <div className="text-[#00e5ff] font-bold flex items-center gap-1.5">
-          <span className="material-symbols-outlined text-[16px]">memory</span>
-          <span>Soluções Pré-Sugeridas:</span>
-        </div>
-        <ul className="list-disc pl-4 text-[#9ca3af] flex flex-col gap-0.5">
-          {getTechnicalSolutions(vt.clientRequests || '').map((sol, index) => (
-            <li key={index}>{sol}</li>
-          ))}
-        </ul>
       </div>
 
       <div className="flex justify-end gap-2 mt-2">
