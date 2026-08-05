@@ -67,12 +67,14 @@ export const VTCard: React.FC<VTCardProps> = ({ vt, onComplete, onEdit, onDelete
 
       {/* Caixa interna arredondada para abas de Pedidos e Considerações */}
       <div className="bg-[#090b11] border border-[#1d2433] rounded-xl p-4 flex flex-col gap-3 mt-auto">
-        <div className="flex gap-4 border-b border-[#1d2433]/60 pb-2">
+        <div className="flex gap-2 bg-[#121620]/80 p-1 rounded-lg border border-[#1d2433]/60">
           <button
             type="button"
             onClick={() => setActiveTab('requests')}
-            className={`text-[10px] font-bold uppercase pb-1 border-b-2 transition-all cursor-pointer ${
-              activeTab === 'requests' ? 'border-[#ff1a3c] text-white' : 'border-transparent text-[#6b7280]'
+            className={`flex-1 text-center py-1.5 rounded-md text-[10px] font-bold uppercase transition-all cursor-pointer ${
+              activeTab === 'requests' 
+                ? 'bg-[#ff1a3c] text-white shadow-[0_2px_8px_rgba(255,26,60,0.2)]' 
+                : 'text-[#6b7280] hover:text-slate-300 hover:bg-white/5'
             }`}
           >
             Pedido do Cliente
@@ -80,14 +82,16 @@ export const VTCard: React.FC<VTCardProps> = ({ vt, onComplete, onEdit, onDelete
           <button
             type="button"
             onClick={() => setActiveTab('notes')}
-            className={`text-[10px] font-bold uppercase pb-1 border-b-2 transition-all cursor-pointer ${
-              activeTab === 'notes' ? 'border-[#ff1a3c] text-white' : 'border-transparent text-[#6b7280]'
+            className={`flex-1 text-center py-1.5 rounded-md text-[10px] font-bold uppercase transition-all cursor-pointer ${
+              activeTab === 'notes' 
+                ? 'bg-[#ff1a3c] text-white shadow-[0_2px_8px_rgba(255,26,60,0.2)]' 
+                : 'text-[#6b7280] hover:text-slate-300 hover:bg-white/5'
             }`}
           >
             Considerações Especiais
           </button>
         </div>
-        <div className="text-xs text-[#9ca3af] min-h-[50px] leading-relaxed whitespace-pre-line">
+        <div className="text-xs text-[#9ca3af] min-h-[50px] leading-relaxed whitespace-pre-line px-1 pt-1">
           {activeTab === 'requests' ? (vt.clientRequests || 'Nenhum pedido registrado.') : (vt.specialNotes || 'Nenhuma consideração registrada.')}
         </div>
       </div>
