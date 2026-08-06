@@ -1,0 +1,56 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum VTStatus {
+  pending
+  completed
+}
+
+model VisitaTecnica {
+  id             String   @id @default(cuid())
+  event          String
+  date           DateTime
+  responsible    String
+  companion      String
+  rooms          String[]
+  clientRequests String
+  specialNotes   String
+  status         VTStatus @default(pending)
+  notified       Boolean  @default(false)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@map("visitas_tecnicas")
+}
+
+model Room {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  createdAt DateTime @default(now())
+
+  @@map("rooms")
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  text      String
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@map("notifications")
+}
+
+model Briefing {
+  id        String   @id @default(cuid())
+  to        String
+  subject   String
+  body      String
+  createdAt DateTime @default(now())
+
+  @@map("briefings")
+}
