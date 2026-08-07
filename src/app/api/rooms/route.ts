@@ -2,8 +2,13 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 
 export async function GET() {
-  const rooms = await prisma.room.findMany({ orderBy: { createdAt: 'asc' } });
-  return NextResponse.json(rooms.map((room) => room.name));
+  try {
+    const rooms = await prisma.room.findMany({ orderBy: { createdAt: 'asc' } });
+    return NextResponse.json(rooms.map((room) => room.name));
+  } catch (error) {
+    console.error('Erro ao buscar salas', error);
+    return NextResponse.json({ error: 'Erro ao buscar as salas' }, { status: 500 });
+  }
 }
 
 export async function POST(request: Request) {

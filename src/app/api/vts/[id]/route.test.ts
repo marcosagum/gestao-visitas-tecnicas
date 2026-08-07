@@ -46,6 +46,36 @@ describe('PATCH /api/vts/[id]', () => {
     });
     expect(body).toEqual(updatedVT);
     expect(prisma.notification.create).not.toHaveBeenCalled();
+    expect(prisma.$transaction).toHaveBeenCalled();
+  });
+
+  it('never passes an id field through to the prisma update, even if the request body has one', async () => {
+    (prisma.visitaTecnica.update as ReturnType<typeof vi.fn>).mockResolvedValue({
+      id: 'vt-1', event: 'Show', date: new Date(),
+    });
+
+    const request = new Request('http://localhost/api/vts/vt-1', {
+      method: 'PATCH',
+      body: JSON.stringify({ id: 'vt-1', event: 'Show Atualizado' }),
+    });
+
+    await PATCH(request, makeParams('vt-1'));
+
+    const call = (prisma.visitaTecnica.update as ReturnType<typeof vi.fn>).mock.calls[0][0];
+    expect(call.data.id).toBeUndefined();
+    expect(call.data.event).toBe('Show Atualizado');
+  });
+
+  it('returns 400 for an invalid status value', async () => {
+    const request = new Request('http://localhost/api/vts/vt-1', {
+      method: 'PATCH',
+      body: JSON.stringify({ status: 'concluida' }),
+    });
+
+    const response = await PATCH(request, makeParams('vt-1'));
+
+    expect(response.status).toBe(400);
+    expect(prisma.visitaTecnica.update).not.toHaveBeenCalled();
   });
 
   it('converts the date field to a Date before updating', async () => {

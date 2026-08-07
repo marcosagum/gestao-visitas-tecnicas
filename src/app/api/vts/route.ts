@@ -2,10 +2,15 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 
 export async function GET() {
-  const vts = await prisma.visitaTecnica.findMany({
-    orderBy: { date: 'asc' },
-  });
-  return NextResponse.json(vts);
+  try {
+    const vts = await prisma.visitaTecnica.findMany({
+      orderBy: { date: 'asc' },
+    });
+    return NextResponse.json(vts);
+  } catch (error) {
+    console.error('Erro ao buscar VTs', error);
+    return NextResponse.json({ error: 'Erro ao buscar as visitas técnicas' }, { status: 500 });
+  }
 }
 
 interface CreateVTBody {

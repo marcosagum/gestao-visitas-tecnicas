@@ -18,10 +18,20 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   const { id } = await params;
   const body = (await request.json()) as UpdateVTBody;
 
-  const data: Record<string, unknown> = { ...body };
-  if (body.date) {
-    data.date = new Date(body.date);
+  if (body.status !== undefined && body.status !== 'pending' && body.status !== 'completed') {
+    return NextResponse.json({ error: 'status inválido' }, { status: 400 });
   }
+
+  const data: Record<string, unknown> = {};
+  if (body.event !== undefined) data.event = body.event;
+  if (body.date !== undefined) data.date = new Date(body.date);
+  if (body.responsible !== undefined) data.responsible = body.responsible;
+  if (body.companion !== undefined) data.companion = body.companion;
+  if (body.rooms !== undefined) data.rooms = body.rooms;
+  if (body.clientRequests !== undefined) data.clientRequests = body.clientRequests;
+  if (body.specialNotes !== undefined) data.specialNotes = body.specialNotes;
+  if (body.status !== undefined) data.status = body.status;
+  if (body.notified !== undefined) data.notified = body.notified;
 
   try {
     const updated = await prisma.$transaction(async (tx) => {

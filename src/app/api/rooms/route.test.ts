@@ -28,6 +28,14 @@ describe('GET /api/rooms', () => {
     expect(prisma.room.findMany).toHaveBeenCalledWith({ orderBy: { createdAt: 'asc' } });
     expect(body).toEqual(['Palco Principal', 'Camarins A/B']);
   });
+
+  it('returns 500 when the database call fails', async () => {
+    (prisma.room.findMany as ReturnType<typeof vi.fn>).mockRejectedValue(new Error('connection lost'));
+
+    const response = await GET();
+
+    expect(response.status).toBe(500);
+  });
 });
 
 describe('POST /api/rooms', () => {
