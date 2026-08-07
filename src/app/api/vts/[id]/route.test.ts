@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { prisma } from '@/lib/prisma';
+import { Prisma } from '@prisma/client';
 import { PATCH, DELETE } from './route';
 
 vi.mock('@/lib/prisma', () => ({
@@ -85,7 +86,9 @@ describe('PATCH /api/vts/[id]', () => {
   });
 
   it('returns 404 when the VT does not exist', async () => {
-    (prisma.visitaTecnica.update as ReturnType<typeof vi.fn>).mockRejectedValue(new Error('not found'));
+    (prisma.visitaTecnica.update as ReturnType<typeof vi.fn>).mockRejectedValue(
+      new Prisma.PrismaClientKnownRequestError('Record not found', { code: 'P2025', clientVersion: '7.9.1' })
+    );
 
     const request = new Request('http://localhost/api/vts/missing', {
       method: 'PATCH',
@@ -95,6 +98,19 @@ describe('PATCH /api/vts/[id]', () => {
     const response = await PATCH(request, makeParams('missing'));
 
     expect(response.status).toBe(404);
+  });
+
+  it('returns 500 for errors other than record-not-found', async () => {
+    (prisma.visitaTecnica.update as ReturnType<typeof vi.fn>).mockRejectedValue(new Error('connection lost'));
+
+    const request = new Request('http://localhost/api/vts/vt-1', {
+      method: 'PATCH',
+      body: JSON.stringify({ status: 'completed' }),
+    });
+
+    const response = await PATCH(request, makeParams('vt-1'));
+
+    expect(response.status).toBe(500);
   });
 });
 
@@ -110,10 +126,20 @@ describe('DELETE /api/vts/[id]', () => {
   });
 
   it('returns 404 when the VT does not exist', async () => {
-    (prisma.visitaTecnica.delete as ReturnType<typeof vi.fn>).mockRejectedValue(new Error('not found'));
+    (prisma.visitaTecnica.delete as ReturnType<typeof vi.fn>).mockRejectedValue(
+      new Prisma.PrismaClientKnownRequestError('Record not found', { code: 'P2025', clientVersion: '7.9.1' })
+    );
 
     const response = await DELETE(new Request('http://localhost/api/vts/missing'), makeParams('missing'));
 
     expect(response.status).toBe(404);
+  });
+
+  it('returns 500 for errors other than record-not-found', async () => {
+    (prisma.visitaTecnica.delete as ReturnType<typeof vi.fn>).mockRejectedValue(new Error('connection lost'));
+
+    const response = await DELETE(new Request('http://localhost/api/vts/vt-1'), makeParams('vt-1'));
+
+    expect(response.status).toBe(500);
   });
 });

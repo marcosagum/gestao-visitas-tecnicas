@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { Prisma } from '@prisma/client';
 
 interface UpdateVTBody {
   event?: string;
@@ -39,8 +40,11 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
 
     return NextResponse.json(updated);
   } catch (error) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2025') {
+      return NextResponse.json({ error: 'Visita Técnica não encontrada' }, { status: 404 });
+    }
     console.error('Erro ao atualizar VT', error);
-    return NextResponse.json({ error: 'Visita Técnica não encontrada' }, { status: 404 });
+    return NextResponse.json({ error: 'Erro ao atualizar a Visita Técnica' }, { status: 500 });
   }
 }
 
@@ -51,7 +55,10 @@ export async function DELETE(_request: Request, { params }: { params: Promise<{ 
     await prisma.visitaTecnica.delete({ where: { id } });
     return NextResponse.json({ ok: true });
   } catch (error) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2025') {
+      return NextResponse.json({ error: 'Visita Técnica não encontrada' }, { status: 404 });
+    }
     console.error('Erro ao excluir VT', error);
-    return NextResponse.json({ error: 'Visita Técnica não encontrada' }, { status: 404 });
+    return NextResponse.json({ error: 'Erro ao excluir a Visita Técnica' }, { status: 500 });
   }
 }
