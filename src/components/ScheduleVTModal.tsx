@@ -44,7 +44,13 @@ export const ScheduleVTModal: React.FC<ScheduleVTModalProps> = ({
   useEffect(() => {
     if (editingVT) {
       setEvent(editingVT.event || '');
-      setDate(editingVT.date ? editingVT.date.slice(0, 16) : '');
+      if (editingVT.date) {
+        const d = new Date(editingVT.date);
+        const pad = (n: number) => String(n).padStart(2, '0');
+        setDate(`${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`);
+      } else {
+        setDate('');
+      }
       setResponsible(editingVT.responsible || '');
       setCompanion(editingVT.companion || '');
       setSelectedRooms(editingVT.rooms || []);
@@ -93,7 +99,7 @@ export const ScheduleVTModal: React.FC<ScheduleVTModalProps> = ({
     onSave({
       id: editingVT?.id,
       event,
-      date,
+      date: date ? new Date(date).toISOString() : date,
       responsible,
       companion,
       rooms: selectedRooms,
