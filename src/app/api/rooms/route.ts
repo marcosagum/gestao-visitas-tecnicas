@@ -14,11 +14,16 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'name é obrigatório' }, { status: 400 });
   }
 
-  const room = await prisma.room.upsert({
-    where: { name },
-    update: {},
-    create: { name },
-  });
+  try {
+    const room = await prisma.room.upsert({
+      where: { name },
+      update: {},
+      create: { name },
+    });
 
-  return NextResponse.json(room, { status: 201 });
+    return NextResponse.json(room, { status: 201 });
+  } catch (error) {
+    console.error('Erro ao adicionar sala', error);
+    return NextResponse.json({ error: 'Erro ao adicionar a sala' }, { status: 500 });
+  }
 }

@@ -63,4 +63,17 @@ describe('POST /api/rooms', () => {
     expect(response.status).toBe(201);
     expect(body).toEqual(room);
   });
+
+  it('returns 500 when the database call fails', async () => {
+    (prisma.room.upsert as ReturnType<typeof vi.fn>).mockRejectedValue(new Error('connection lost'));
+
+    const request = new Request('http://localhost/api/rooms', {
+      method: 'POST',
+      body: JSON.stringify({ name: 'Sala Nova' }),
+    });
+
+    const response = await POST(request);
+
+    expect(response.status).toBe(500);
+  });
 });
