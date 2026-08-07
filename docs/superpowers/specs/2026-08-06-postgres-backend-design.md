@@ -79,7 +79,7 @@ O timer client-side que verifica VTs a menos de 3h de iniciar (`setInterval` a c
 
 ## Setup / Infraestrutura
 
-- Projeto Supabase criado pelo usuário; a `DATABASE_URL` (connection string em modo *pooling*, recomendado para ambientes serverless/Next.js) é fornecida por ele e configurada em `.env.local` (já coberto pelo `.gitignore` via `.env*.local`).
+- Projeto Supabase criado pelo usuário; a `DATABASE_URL` (connection string em modo *pooling*, recomendado para ambientes serverless/Next.js) é fornecida por ele e configurada em `.env` (já coberto pelo `.gitignore`; **não** `.env.local` — o Prisma CLI só carrega `.env`). Ver `README.md` para a história completa de migração/setup (inclui `DIRECT_URL` para `prisma migrate dev`).
 - Cliente Prisma configurado com `@prisma/adapter-pg` (já instalado) para conectar via `pg` ao Postgres do Supabase.
 - `npx prisma migrate dev` cria as tabelas no banco a partir do schema acima.
 

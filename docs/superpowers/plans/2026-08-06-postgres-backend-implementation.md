@@ -1080,20 +1080,21 @@ git commit -m "feat: add /api/briefings route"
 ### Task 7: Conectar ao Supabase, rodar migration e seed
 
 **Files:**
-- Create: `.env.local` (não commitado — já coberto por `.env*.local` no `.gitignore`)
+- Create: `.env` (não commitado — já coberto pelo `.gitignore`; **não** `.env.local`, o Prisma CLI só carrega `.env`. Ver `README.md` na raiz do projeto para a história completa de setup/migração, incluindo `DIRECT_URL`.)
 
 **Interfaces:**
-- Consumes: `DATABASE_URL` fornecida pelo usuário (connection string do Supabase, modo *pooling*, ex: porta 6543 com `?pgbouncer=true`).
+- Consumes: `DATABASE_URL` fornecida pelo usuário (connection string do Supabase, modo *pooling*, ex: porta 6543 com `?pgbouncer=true`) e `DIRECT_URL` (modo direto/session, porta 5432, sem pooler — necessária para o shadow database do `prisma migrate dev`).
 - Produces: banco Postgres no Supabase com as tabelas `visitas_tecnicas`, `rooms`, `notifications`, `briefings` criadas e populadas com os dados de seed.
 
-Esta task exige uma credencial que só o usuário tem. Se `DATABASE_URL` ainda não foi fornecida, pare aqui e peça ao usuário a connection string do projeto Supabase (Project Settings → Database → Connection string → modo "Transaction" / pooling) antes de continuar.
+Esta task exige uma credencial que só o usuário tem. Se `DATABASE_URL`/`DIRECT_URL` ainda não foram fornecidas, pare aqui e peça ao usuário as connection strings do projeto Supabase (Project Settings → Database → Connection string → modo "Transaction"/pooling para `DATABASE_URL`, modo "Direct connection" para `DIRECT_URL`) antes de continuar.
 
 - [ ] **Step 1: Configurar a variável de ambiente local**
 
-Criar `.env.local` na raiz do projeto com o valor real fornecido pelo usuário:
+Criar `.env` na raiz do projeto com os valores reais fornecidos pelo usuário:
 
 ```
-DATABASE_URL="<connection string fornecida pelo usuário>"
+DATABASE_URL="<connection string pooled fornecida pelo usuário>"
+DIRECT_URL="<connection string direct fornecida pelo usuário>"
 ```
 
 - [ ] **Step 2: Rodar a migration inicial**
@@ -1116,7 +1117,7 @@ No painel do Supabase (Table Editor), confirmar que as tabelas `rooms` e `visita
 
 - [ ] **Step 5: Commit**
 
-Nenhum arquivo de código muda nesta task (`.env.local` não é commitado). Não é necessário commit — apenas confirmar que a migration ficou registrada:
+Nenhum arquivo de código muda nesta task (`.env` não é commitado). Não é necessário commit — apenas confirmar que a migration ficou registrada:
 
 ```bash
 git status
