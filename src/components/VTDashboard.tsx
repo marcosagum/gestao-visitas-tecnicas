@@ -20,8 +20,8 @@ interface VT {
 interface Notification {
   id: string;
   text: string;
-  time: string;
   read: boolean;
+  createdAt: string;
 }
 
 interface BriefingEmail {
@@ -29,202 +29,94 @@ interface BriefingEmail {
   to: string;
   subject: string;
   body: string;
-  time: string;
+  createdAt: string;
 }
+
+const formatTime = (iso: string) =>
+  new Date(iso).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
 
 export default function VTDashboard() {
   const [vts, setVts] = useState<VT[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingVT, setEditingVT] = useState<VT | null>(null);
-  
-  // Lista de salas disponíveis (inicia com padrão e acumula customizadas)
-  const [availableRooms, setAvailableRooms] = useState<string[]>([
-    "Palco Principal", "Camarins A/B", "Sala de Controle / FOH", 
-    "Área de Credenciamento", "Praça de Alimentação", 
-    "Acessos / Bilheteria", "Camarotes VIP", "Estacionamento / Carga"
-  ]);
 
-  // Filtros ativos
+  const [availableRooms, setAvailableRooms] = useState<string[]>([]);
+
   const [statusFilter, setStatusFilter] = useState<'all' | 'today' | 'pending' | 'completed'>('all');
   const [roomFilter, setRoomFilter] = useState<string>('all');
   const [showRoomDashboard, setShowRoomDashboard] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
 
-  // Estados de Notificações e Briefings
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [isNotifOpen, setIsNotifOpen] = useState(false);
   const [briefings, setBriefings] = useState<BriefingEmail[]>([]);
   const [isBriefingOpen, setIsBriefingOpen] = useState(false);
 
-  // Carrega do LocalStorage com tratamento de segurança
+  // Carrega os dados iniciais da API
   useEffect(() => {
-    try {
-      const savedVTs = localStorage.getItem('vts_list');
-      
-      // VTs de exemplo (hoje, próximos dias, concluídas e salas variadas)
-      const mockVTs: VT[] = [
-        {
-          id: "vt-1",
-          event: "Kid Abelha - Reunião de Alinhamento Arena",
-          date: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString().slice(0, 16),
-          responsible: "Marcos Agum",
-          companion: "Roberto (Produtor Kid Abelha)",
-          rooms: ["Palco Principal", "Camarins A/B", "Sala de Controle / FOH"],
-          clientRequests: "Necessidade de 12 canais de retorno sem fio IEM (In-Ear Monitor). O rider técnico exige camarim com ar condicionado forte.",
-          specialNotes: "Medir largura da rampa de acesso lateral ao palco para cases grandes de som.",
-          status: "pending",
-          notified: false
-        },
-        {
-          id: "vt-2",
-          event: "Festival de Dança - Ensaio Geral",
-          date: new Date().toISOString().slice(0, 16), // Hoje!
-          responsible: "Ana Carolina",
-          companion: "Clara Ramos (Diretora do Festival)",
-          rooms: ["Palco Principal", "Camarins A/B"],
-          clientRequests: "Necessidade de iluminação especial cênica de LED e piso de linóleo sobre o palco.",
-          specialNotes: "Verificar se a temperatura do ar condicionado da plateia pode ser mantida em 22°C.",
-          status: "pending",
-          notified: false
-        },
-        {
-          id: "vt-3",
-          event: "Show Lançamento Sertanejo - Montagem",
-          date: new Date(Date.now() + 1 * 24 * 60 * 60 * 1000).toISOString().slice(0, 16), // Amanhã!
-          responsible: "Thiago Silva",
-          companion: "Gustavo Lima (Diretoria Artística)",
-          rooms: ["Palco Principal", "Estacionamento / Carga", "Camarotes VIP"],
-          clientRequests: "Instalação de sonorização complementar nos camarotes VIP e rampa especial de acesso de cargas.",
-          specialNotes: "Exige gerador de energia trifásico de 250kVA reserva para painel de LED principal.",
-          status: "pending",
-          notified: false
-        },
-        {
-          id: "vt-4",
-          event: "Convenção Inova 2026 - Alinhamento TI",
-          date: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString().slice(0, 16),
-          responsible: "Felipe Castro",
-          companion: "Mariana Costa (Produtora Inova)",
-          rooms: ["Área de Credenciamento", "Praça de Alimentação", "Acessos / Bilheteria"],
-          clientRequests: "Necessidade de link dedicado de internet de 500Mbps na área de credenciamento e totens de autoatendimento.",
-          specialNotes: "Check de roteadores Wi-Fi corporativos redundantes cobrindo a praça de alimentação inteira.",
-          status: "pending",
-          notified: false
-        },
-        {
-          id: "vt-5",
-          event: "Congresso de Medicina - Expositores",
-          date: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString().slice(0, 16),
-          responsible: "Dr. Leonardo",
-          companion: "Patricia Albuquerque (CRM Eventos)",
-          rooms: ["Estacionamento / Carga", "Praça de Alimentação", "Acessos / Bilheteria"],
-          clientRequests: "Pontos de energia monofásicos em cada stand (total de 45 stands) na praça de alimentação.",
-          specialNotes: "Auditoria de segurança das instalações temporárias de gás na praça de alimentação.",
-          status: "pending",
-          notified: false
-        },
-        {
-          id: "vt-6",
-          event: "Futebol Beneficente - Cobertura TI",
-          date: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString().slice(0, 16), // Ontem!
-          responsible: "Lucas Pereira",
-          companion: "Eduardo (Diretor de TI)",
-          rooms: ["Camarotes VIP", "Acessos / Bilheteria"],
-          clientRequests: "Configuração de rede interna para transmissão de streaming ao vivo de alta velocidade.",
-          specialNotes: "Cabeamento de fibra ótica temporário passando pelos camarotes VIP.",
-          status: "completed",
-          notified: true
-        }
-      ];
-
-      // Se não houver dados, ou se houver apenas o mock anterior de tamanho 1, carrega os novos mocks ricos
-      if (savedVTs) {
-        const parsed = JSON.parse(savedVTs);
-        if (parsed.length <= 1) {
-          setVts(mockVTs);
-          localStorage.setItem('vts_list', JSON.stringify(mockVTs));
-        } else {
-          // Normalização defensiva de dados legados
-          const normalized = parsed.map((vt: any) => ({
-            id: vt.id || `vt-${Date.now()}-${Math.random()}`,
-            event: vt.event || "Evento Sem Nome",
-            date: vt.date || new Date().toISOString().slice(0, 16),
-            responsible: vt.responsible || "Não Definido",
-            companion: vt.companion || "Não Definido",
-            rooms: Array.isArray(vt.rooms) ? vt.rooms : ["Palco Principal"],
-            clientRequests: vt.clientRequests || "",
-            specialNotes: vt.specialNotes || "",
-            status: vt.status || "pending",
-            notified: typeof vt.notified === "boolean" ? vt.notified : false,
-          }));
-          setVts(normalized);
-        }
-      } else {
-        setVts(mockVTs);
-        localStorage.setItem('vts_list', JSON.stringify(mockVTs));
+    (async () => {
+      try {
+        const [vtsRes, roomsRes, notifsRes, briefsRes] = await Promise.all([
+          fetch('/api/vts'),
+          fetch('/api/rooms'),
+          fetch('/api/notifications'),
+          fetch('/api/briefings'),
+        ]);
+        setVts(await vtsRes.json());
+        setAvailableRooms(await roomsRes.json());
+        setNotifications(await notifsRes.json());
+        setBriefings(await briefsRes.json());
+      } catch (e) {
+        console.error('Erro ao carregar dados do servidor', e);
+        alert('Não foi possível carregar os dados. Verifique sua conexão e recarregue a página.');
       }
-      const savedRooms = localStorage.getItem('vt_available_rooms');
-      if (savedRooms) setAvailableRooms(JSON.parse(savedRooms));
-
-      const savedNotifs = localStorage.getItem('notifs_list');
-      if (savedNotifs) setNotifications(JSON.parse(savedNotifs));
-
-      const savedBriefs = localStorage.getItem('emails_list');
-      if (savedBriefs) setBriefings(JSON.parse(savedBriefs));
-    } catch (e) {
-      console.error("Erro no carregamento do LocalStorage", e);
-    }
+    })();
   }, []);
 
-  // Sincroniza dados com LocalStorage
-  const saveVTs = (updated: VT[]) => {
-    setVts(updated);
+  const handleAddCustomRoom = async (newRoom: string) => {
     try {
-      localStorage.setItem('vts_list', JSON.stringify(updated));
-    } catch (e) { console.error(e); }
-  };
-
-  const handleAddCustomRoom = (newRoom: string) => {
-    const updatedRooms = [...availableRooms, newRoom];
-    setAvailableRooms(updatedRooms);
-    try {
-      localStorage.setItem('vt_available_rooms', JSON.stringify(updatedRooms));
-    } catch (e) { console.error(e); }
+      const response = await fetch('/api/rooms', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: newRoom }),
+      });
+      if (!response.ok) throw new Error('Falha ao adicionar sala');
+      setAvailableRooms(prev => (prev.includes(newRoom) ? prev : [...prev, newRoom]));
+    } catch (e) {
+      console.error(e);
+      alert('Não foi possível adicionar a sala.');
+    }
   };
 
   // Cronómetro de Notificação em Tempo Real (Roda a cada 10 segundos)
   useEffect(() => {
-    const interval = setInterval(() => {
+    const interval = setInterval(async () => {
       const now = new Date();
-      let hasChanges = false;
-      const updatedVTs = vts.map(vt => {
-        if (vt.notified || vt.status === "completed" || !vt.date) return vt;
-        
+
+      for (const vt of vts) {
+        if (vt.notified || vt.status === 'completed' || !vt.date) continue;
+
         const vtTime = new Date(vt.date).getTime();
         const diffMs = vtTime - now.getTime();
-        
-        // Dispara se a VT estiver a menos de 3 horas de iniciar
-        if (diffMs > 0 && diffMs <= 3 * 60 * 60 * 1000) {
-          hasChanges = true;
-          // Adiciona notificação
-          const newNotif: Notification = {
-            id: `notif-${Date.now()}-${Math.random()}`,
-            text: `Visita Técnica para "${vt.event}" está se aproximando! Início às ${new Date(vt.date).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}.`,
-            time: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
-            read: false
-          };
-          setNotifications(prev => {
-            const updated = [newNotif, ...prev];
-            localStorage.setItem('notifs_list', JSON.stringify(updated));
-            return updated;
-          });
-          return { ...vt, notified: true };
-        }
-        return vt;
-      });
 
-      if (hasChanges) {
-        saveVTs(updatedVTs);
+        if (diffMs > 0 && diffMs <= 3 * 60 * 60 * 1000) {
+          try {
+            const response = await fetch(`/api/vts/${vt.id}`, {
+              method: 'PATCH',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ notified: true }),
+            });
+            if (!response.ok) throw new Error('Falha ao marcar VT como notificada');
+            const updatedVT = await response.json();
+
+            setVts(prev => prev.map(v => (v.id === updatedVT.id ? updatedVT : v)));
+
+            const notifsRes = await fetch('/api/notifications');
+            setNotifications(await notifsRes.json());
+          } catch (e) {
+            console.error(e);
+          }
+        }
       }
     }, 10000);
 
@@ -233,7 +125,7 @@ export default function VTDashboard() {
 
   // Cálculos das Métricas
   const totalCount = vts.length;
-  
+
   const todayCount = vts.filter(vt => {
     if (!vt.date) return false;
     const vtDate = new Date(vt.date).toDateString();
@@ -251,40 +143,110 @@ export default function VTDashboard() {
 
   // Filtragem da Grid
   const filteredVTs = vts.filter(vt => {
-    // Busca por texto com fallback contra campos undefined
     const matchesSearch = (vt.event || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
       (vt.responsible || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
       (vt.companion || '').toLowerCase().includes(searchTerm.toLowerCase());
-    
+
     if (!matchesSearch) return false;
 
-    // Filtro por Sala
     if (roomFilter !== 'all' && !(vt.rooms || []).includes(roomFilter)) return false;
 
-    // Filtro de Status/Tempo
     if (!vt.date && statusFilter !== 'all') return false;
     const vtDate = vt.date ? new Date(vt.date).toDateString() : '';
     const today = new Date().toDateString();
-    
+
     if (statusFilter === 'today') return vtDate === today && vt.status !== 'completed';
     if (statusFilter === 'pending') return vtDate !== today && vt.status === 'pending';
     if (statusFilter === 'completed') return vt.status === 'completed';
-    
+
     return true;
   });
 
-  // Notificações não lidas
   const unreadNotifsCount = notifications.filter(n => !n.read).length;
 
-  const markAllNotifsRead = () => {
-    const updated = notifications.map(n => ({ ...n, read: true }));
-    setNotifications(updated);
-    localStorage.setItem('notifs_list', JSON.stringify(updated));
+  const markAllNotifsRead = async () => {
+    try {
+      const response = await fetch('/api/notifications', { method: 'PATCH' });
+      if (!response.ok) throw new Error('Falha ao marcar notificações como lidas');
+      setNotifications(await response.json());
+    } catch (e) {
+      console.error(e);
+      alert('Não foi possível atualizar as notificações.');
+    }
   };
 
-  const clearNotifications = () => {
-    setNotifications([]);
-    localStorage.setItem('notifs_list', JSON.stringify([]));
+  const clearNotifications = async () => {
+    try {
+      const response = await fetch('/api/notifications', { method: 'DELETE' });
+      if (!response.ok) throw new Error('Falha ao limpar notificações');
+      setNotifications([]);
+    } catch (e) {
+      console.error(e);
+      alert('Não foi possível limpar as notificações.');
+    }
+  };
+
+  const handleComplete = async (id: string) => {
+    try {
+      const response = await fetch(`/api/vts/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: 'completed' }),
+      });
+      if (!response.ok) throw new Error('Falha ao concluir VT');
+      const updatedVT = await response.json();
+      setVts(prev => prev.map(v => (v.id === updatedVT.id ? updatedVT : v)));
+    } catch (e) {
+      console.error(e);
+      alert('Não foi possível concluir a Visita Técnica.');
+    }
+  };
+
+  const handleDelete = async (id: string) => {
+    if (!confirm('Tem certeza que deseja excluir esta Visita Técnica?')) return;
+    try {
+      const response = await fetch(`/api/vts/${id}`, { method: 'DELETE' });
+      if (!response.ok) throw new Error('Falha ao excluir VT');
+      setVts(prev => prev.filter(v => v.id !== id));
+    } catch (e) {
+      console.error(e);
+      alert('Não foi possível excluir a Visita Técnica.');
+    }
+  };
+
+  const handleSave = async (data: Omit<VT, 'id' | 'status'> & { id?: string }) => {
+    try {
+      if (data.id) {
+        const response = await fetch(`/api/vts/${data.id}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data),
+        });
+        if (!response.ok) throw new Error('Falha ao editar VT');
+        const updatedVT = await response.json();
+        setVts(prev => prev.map(v => (v.id === updatedVT.id ? updatedVT : v)));
+      } else {
+        const response = await fetch('/api/vts', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data),
+        });
+        if (!response.ok) throw new Error('Falha ao criar VT');
+        const newVT = await response.json();
+        setVts(prev => [...prev, newVT]);
+
+        const [notifsRes, briefsRes] = await Promise.all([
+          fetch('/api/notifications'),
+          fetch('/api/briefings'),
+        ]);
+        setNotifications(await notifsRes.json());
+        setBriefings(await briefsRes.json());
+      }
+      setIsModalOpen(false);
+    } catch (e) {
+      console.error(e);
+      alert('Não foi possível salvar a Visita Técnica.');
+    }
   };
 
   return (
@@ -294,13 +256,11 @@ export default function VTDashboard() {
           <h2 className="font-extrabold text-lg tracking-wider">GESTÃO DE VISITAS TÉCNICAS</h2>
           <p className="text-xs text-slate-400">Gerenciamento e registro de solicitações e salas de visitas técnicas da Arena</p>
         </div>
-        
-        {/* Ações de Cabeçalho (Notificações, Briefings e Agendar) */}
+
         <div className="flex items-center gap-3 relative">
-          
-          {/* Sino de Notificações */}
+
           <div className="relative">
-            <button 
+            <button
               type="button"
               onClick={() => {
                 setIsNotifOpen(!isNotifOpen);
@@ -316,7 +276,6 @@ export default function VTDashboard() {
               )}
             </button>
 
-            {/* Painel Dropdown de Notificações */}
             {isNotifOpen && (
               <div className="absolute right-0 mt-2 w-80 bg-[#121620] border border-[#1d2433] rounded-xl shadow-[0_10px_25px_rgba(0,0,0,0.5)] z-[999] overflow-hidden">
                 <div className="p-3 border-b border-[#1d2433] flex justify-between items-center bg-[#0e1119]">
@@ -331,12 +290,12 @@ export default function VTDashboard() {
                     <div className="p-4 text-center text-xs text-slate-500 italic">Sem novas notificações</div>
                   ) : (
                     notifications.map(n => (
-                      <div 
-                        key={n.id} 
+                      <div
+                        key={n.id}
                         className={`p-3 border-b border-[#1d2433]/50 text-xs transition-all hover:bg-white/5 flex flex-col gap-1 ${!n.read ? 'bg-[#ff1a3c]/5 border-l-2 border-l-[#ff1a3c]' : ''}`}
                       >
                         <span className="text-[#f3f4f6]">{n.text}</span>
-                        <span className="text-[9px] text-slate-500">{n.time}</span>
+                        <span className="text-[9px] text-slate-500">{formatTime(n.createdAt)}</span>
                       </div>
                     ))
                   )}
@@ -345,7 +304,6 @@ export default function VTDashboard() {
             )}
           </div>
 
-          {/* Botão "Briefings Enviados" */}
           <button
             type="button"
             onClick={() => {
@@ -357,9 +315,8 @@ export default function VTDashboard() {
             <span className="material-symbols-outlined text-[16px]">mail</span>
             <span>Briefings Enviados</span>
           </button>
-          
-          {/* BOTÃO AGENDAR VT - Dispara onClick que abre o Modal */}
-          <button 
+
+          <button
             type="button"
             onClick={() => {
               setEditingVT(null);
@@ -375,9 +332,8 @@ export default function VTDashboard() {
         </div>
       </header>
 
-      {/* METRIC CARDS INTERATIVOS (onClick atualiza filtros na mesma lógica de estado) */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div 
+        <div
           onClick={() => {
             setStatusFilter('all');
             setRoomFilter('all');
@@ -391,7 +347,7 @@ export default function VTDashboard() {
           <span className="font-extrabold text-2xl font-title">{totalCount}</span>
         </div>
 
-        <div 
+        <div
           onClick={() => {
             setStatusFilter('today');
             setRoomFilter('all');
@@ -405,7 +361,7 @@ export default function VTDashboard() {
           <span className={`font-extrabold text-2xl font-title ${todayCount > 0 ? 'text-[#ff1a3c]' : ''}`}>{todayCount}</span>
         </div>
 
-        <div 
+        <div
           onClick={() => {
             setStatusFilter('pending');
             setRoomFilter('all');
@@ -419,8 +375,7 @@ export default function VTDashboard() {
           <span className="font-extrabold text-2xl font-title">{upcomingCount}</span>
         </div>
 
-        {/* Salas Mapeadas: Abre o painel expandido de Salas e o que cada uma é */}
-        <div 
+        <div
           onClick={() => {
             setShowRoomDashboard(!showRoomDashboard);
             setStatusFilter('all');
@@ -434,7 +389,6 @@ export default function VTDashboard() {
         </div>
       </div>
 
-      {/* Painel Operacional de Salas Mapeadas (O que é cada um) */}
       {showRoomDashboard && (
         <div className="bg-[#121620] border border-[#1d2433] p-5 rounded-xl animate-in fade-in slide-in-from-top-4 duration-300">
           <div className="flex justify-between items-center mb-4">
@@ -442,7 +396,7 @@ export default function VTDashboard() {
               <span className="material-symbols-outlined text-[16px] text-[#00e5ff]">dashboard</span>
               <span>Espaços Mapeados e VTs Agendadas (O que é cada um)</span>
             </h2>
-            <button 
+            <button
               type="button"
               onClick={() => setRoomFilter('all')}
               className="text-[10px] bg-[#1d2433] hover:bg-[#2e3952] px-2.5 py-1 rounded transition-all text-[#9ca3af] hover:text-white cursor-pointer"
@@ -450,12 +404,12 @@ export default function VTDashboard() {
               Limpar Filtro de Sala
             </button>
           </div>
-          
+
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {(availableRooms || []).map(room => {
               const roomVTs = vts.filter(v => (v.rooms || []).includes(room));
               return (
-                <div 
+                <div
                   key={room}
                   onClick={() => setRoomFilter(room)}
                   className={`p-3.5 rounded-lg cursor-pointer border transition-all ${
@@ -483,10 +437,9 @@ export default function VTDashboard() {
         </div>
       )}
 
-      {/* Barra de Filtros e Pesquisa */}
       <div className="flex gap-4 items-center">
-        <input 
-          type="text" 
+        <input
+          type="text"
           placeholder="Buscar por evento ou técnico..."
           value={searchTerm}
           onChange={e => setSearchTerm(e.target.value)}
@@ -506,24 +459,17 @@ export default function VTDashboard() {
         )}
       </div>
 
-      {/* Grid de Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {filteredVTs.map(vt => (
-          <VTCard 
+          <VTCard
             key={vt.id}
             vt={vt}
-            onComplete={(id) => {
-              saveVTs(vts.map(v => v.id === id ? { ...v, status: 'completed' } : v));
-            }}
+            onComplete={handleComplete}
             onEdit={(vtToEdit) => {
               setEditingVT(vtToEdit);
               setIsModalOpen(true);
             }}
-            onDelete={(id) => {
-              if (confirm("Tem certeza que deseja excluir esta Visita Técnica?")) {
-                saveVTs(vts.filter(v => v.id !== id));
-              }
-            }}
+            onDelete={handleDelete}
           />
         ))}
       </div>
@@ -534,64 +480,18 @@ export default function VTDashboard() {
         </div>
       )}
 
-      {/* Modal de Agendamento */}
-      <ScheduleVTModal 
+      <ScheduleVTModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         editingVT={editingVT}
         availableRooms={availableRooms}
         onAddCustomRoom={handleAddCustomRoom}
-        onSave={(data) => {
-          let updatedList: VT[] = [];
-          if (data.id) {
-            // Edição
-            updatedList = vts.map(v => v.id === data.id ? { ...v, ...data } as VT : v);
-          } else {
-            // Criação
-            const newVT: VT = {
-              ...data,
-              id: `vt-${Date.now()}`,
-              status: 'pending',
-              notified: false
-            } as VT;
-            updatedList = [...vts, newVT];
-            
-            // Simular envio de email/briefing automático
-            const newBriefing: BriefingEmail = {
-              id: `brief-${Date.now()}`,
-              to: `${data.responsible.replace(/\s+/g, '.').toLowerCase()}@arena.com.br`,
-              subject: `Briefing Técnico: ${data.event}`,
-              body: `Visita agendada para: ${new Date(data.date).toLocaleString('pt-BR')}.\nSalas: ${data.rooms.join(', ')}.\nSolicitação Cliente: ${data.clientRequests}\nConsiderações Especiais: ${data.specialNotes}`,
-              time: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
-            };
-            setBriefings(prev => {
-              const updated = [newBriefing, ...prev];
-              localStorage.setItem('emails_list', JSON.stringify(updated));
-              return updated;
-            });
-            
-            // Criar notificação imediata
-            const newNotif: Notification = {
-              id: `notif-${Date.now()}`,
-              text: `Novo briefing de VT enviado para ${data.responsible} ("${data.event}").`,
-              time: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
-              read: false
-            };
-            setNotifications(prev => {
-              const updated = [newNotif, ...prev];
-              localStorage.setItem('notifs_list', JSON.stringify(updated));
-              return updated;
-            });
-          }
-          saveVTs(updatedList);
-          setIsModalOpen(false);
-        }}
+        onSave={handleSave}
       />
 
-      {/* Side Drawer para Briefings Enviados (Simulação de Emails) */}
       {isBriefingOpen && (
         <>
-          <div 
+          <div
             onClick={() => setIsBriefingOpen(false)}
             className="fixed inset-0 bg-[#03050c]/70 backdrop-blur-sm z-[1000]"
           />
@@ -601,14 +501,14 @@ export default function VTDashboard() {
                 <span className="material-symbols-outlined text-[#00e5ff]">mail</span>
                 <span>Briefings e Notificações de Email</span>
               </h3>
-              <button 
+              <button
                 onClick={() => setIsBriefingOpen(false)}
                 className="w-8 h-8 rounded-lg hover:bg-white/5 text-[#9ca3af] hover:text-white flex items-center justify-center cursor-pointer"
               >
                 <span className="material-symbols-outlined">close</span>
               </button>
             </div>
-            
+
             <div className="flex-grow overflow-y-auto flex flex-col gap-4">
               {briefings.length === 0 ? (
                 <div className="text-center text-xs text-slate-500 italic py-12">Nenhum briefing enviado ainda. Crie uma nova visita técnica para simular o disparo de briefings técnicos.</div>
@@ -617,7 +517,7 @@ export default function VTDashboard() {
                   <div key={mail.id} className="bg-[#090b11] border border-[#1d2433] p-4 rounded-xl flex flex-col gap-3">
                     <div className="flex justify-between items-start gap-2">
                       <span className="text-[10px] text-[#00e5ff] font-bold font-mono">ENVIADO</span>
-                      <span className="text-[9px] text-slate-500">{mail.time}</span>
+                      <span className="text-[9px] text-slate-500">{formatTime(mail.createdAt)}</span>
                     </div>
                     <div className="text-xs">
                       <div className="text-slate-400 mb-0.5"><strong className="text-slate-300">Para:</strong> {mail.to}</div>

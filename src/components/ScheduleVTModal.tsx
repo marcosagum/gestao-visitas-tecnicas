@@ -44,7 +44,7 @@ export const ScheduleVTModal: React.FC<ScheduleVTModalProps> = ({
   useEffect(() => {
     if (editingVT) {
       setEvent(editingVT.event || '');
-      setDate(editingVT.date || '');
+      setDate(editingVT.date ? editingVT.date.slice(0, 16) : '');
       setResponsible(editingVT.responsible || '');
       setCompanion(editingVT.companion || '');
       setSelectedRooms(editingVT.rooms || []);
